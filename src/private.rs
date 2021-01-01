@@ -396,6 +396,20 @@ impl<A> Private<A> {
         self.call_get("/users/self/trailing-volume")
     }
 
+    pub fn get_deposits(&self) -> A::Result
+    where
+        A: Adapter<Vec<Deposit>> + 'static,
+    {
+        self.call_get("/transfers")
+    }
+
+    pub fn get_deposit(&self, id: Uuid) -> A::Result
+    where
+        A: Adapter<Deposit> + 'static,
+    {
+        self.call_get(&format!("/transfers/{}", id))
+    }
+
     pub fn public(&self) -> &Public<A> {
         &self._pub
     }
@@ -591,6 +605,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_get_order() {
         delay();
         let client: Private<Sync> = Private::new(SANDBOX_URL, KEY, SECRET, PASSPHRASE);
@@ -630,5 +645,23 @@ mod tests {
         assert!(time_str.contains("iso:"));
         assert!(time_str.contains("epoch:"));
         assert!(time_str.ends_with("}"));
+    }
+
+    #[test]
+    fn test_get_deposits() {
+        let client: Private<Sync> = Private::new(SANDBOX_URL, KEY, SECRET, PASSPHRASE);
+        let deposits = client.get_deposits().unwrap();
+
+        let deposit = deposits.iter().next().unwrap();
+        let deposits_str = format!("{:?}", deposit);
+        assert!(deposits_str.starts_with("Deposit {"));
+        assert!(deposits_str.contains("created_at:"));
+        assert!(deposits_str.contains("account_id:"));
+
+        let single_deposit = client.get_deposit(deposit.id).unwrap();
+        let deposits_str = format!("{:?}", single_deposit);
+        assert!(deposits_str.starts_with("Deposit {"));
+        assert!(deposits_str.contains("created_at:"));
+        assert!(deposits_str.contains("account_id:"));
     }
 }

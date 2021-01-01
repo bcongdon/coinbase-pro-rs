@@ -1,3 +1,4 @@
+use chrono::{DateTime, NaiveDateTime};
 use serde::de::{self, Deserialize, Deserializer, Visitor};
 use std::fmt;
 use std::str::FromStr;
@@ -97,6 +98,34 @@ where
 {
     let s = String::deserialize(d)?;
     (s + "").parse().map_err(de::Error::custom)
+}
+
+pub fn deposit_datetime_from_string<'de, D>(d: D) -> Result<super::structs::DateTime, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(d)?;
+    chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S.%f+00")
+        .map_err(de::Error::custom)
+        .map(|x| super::structs::DateTime::from_utc(x, chrono::Utc))
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct WrappedDepositDatetime(
+    #[serde(deserialize_with = "deposit_datetime_from_string")] super::structs::DateTime,
+);
+
+pub fn deposit_datetime_opt_from_string<'de, D>(
+    d: D,
+) -> Result<Option<super::structs::DateTime>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<WrappedDepositDatetime>::deserialize(d).map(
+        |opt_wrapped: Option<WrappedDepositDatetime>| {
+            opt_wrapped.map(|wrapped: WrappedDepositDatetime| wrapped.0)
+        },
+    )
 }
 
 #[cfg(test)]

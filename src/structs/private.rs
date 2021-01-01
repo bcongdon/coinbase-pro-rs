@@ -1,6 +1,9 @@
 use super::reqs::OrderStop;
 use super::DateTime;
-use crate::utils::{datetime_from_string, f64_from_string, usize_from_string};
+use crate::utils::{
+    datetime_from_string, deposit_datetime_from_string, deposit_datetime_opt_from_string,
+    f64_from_string, usize_from_string,
+};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use uuid::Uuid;
@@ -222,6 +225,34 @@ pub struct Fill {
     pub fee: f64,
     pub settled: bool,
     pub side: super::reqs::OrderSide,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Deposit {
+    pub id: Uuid,
+    #[serde(deserialize_with = "deposit_datetime_from_string")]
+    pub created_at: DateTime,
+    #[serde(deserialize_with = "deposit_datetime_opt_from_string")]
+    pub completed_at: Option<DateTime>,
+    #[serde(deserialize_with = "deposit_datetime_opt_from_string")]
+    pub canceled_at: Option<DateTime>,
+    #[serde(deserialize_with = "deposit_datetime_opt_from_string")]
+    pub processed_at: Option<DateTime>,
+    pub account_id: Uuid,
+    #[serde(deserialize_with = "f64_from_string")]
+    pub amount: f64,
+    pub details: Option<DepositDetails>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DepositDetails {
+    pub crypto_address: Option<String>,
+    pub destination_tag: Option<String>,
+    pub coinbase_account_id: Option<Uuid>,
+    pub destination_tag_name: Option<String>,
+    pub crypto_tranaction_id: Option<String>,
+    pub coinbase_transaction_id: Option<String>,
+    pub crypto_transaction_hash: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
